@@ -1,0 +1,115 @@
+import nodemailer from 'nodemailer'
+
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+const RATE_LIMIT_MAX = 5
+const rateLimitStore = new Map()
+const DEFAULT_SENDER_EMAIL = 'mdocteur.faye@univ-thies.sn'
+const DEFAULT_RECIPIENT_EMAIL = 'mamadoudocteurf@gmail.com'
+
+function getClientIp(request) {
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  return forwardedFor?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown'
+}
+
+function isRateLimited(ip) {
+  const now = Date.now()
+  const record = rateLimitStore.get(ip)
+
+  if (!record || now > record.resetAt) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+
+  record.count += 1
+  return record.count > RATE_LIMIT_MAX
+}
+
+function cleanText(value, maxLength = 500) {
+  return String(value || '').trim().slice(0, maxLength)
+}
+
+function escapeHtml(value, maxLength) {
+  return cleanText(value, maxLength)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+export async function POST(request) {
+  try {
+    const ip = getClientIp(request)
+
+    if (isRateLimited(ip)) {
+      return Response.json({ error: 'Trop de demandes. Réessayez dans quelques minutes.' }, { status: 429 })
+    }
+
+    const { name, phone, email, service, message, website } = await request.json()
+
+    if (website) {
+      return Response.json({ success: true })
+    }
+
+    const gmailUser = process.env.GMAIL_USER || DEFAULT_SENDER_EMAIL
+    const recipientEmail = process.env.EMAIL_TO || DEFAULT_RECIPIENT_EMAIL
+
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, '')
+
+    if (!gmailAppPassword) {
+      console.error('Email config missing: GMAIL_APP_PASSWORD')
+      return Response.json({ error: 'Configuration email indisponible' }, { status: 500 })
+    }
+
+    const safeName = escapeHtml(name, 120)
+    const safePhone = escapeHtml(phone, 80)
+    const safeEmail = escapeHtml(email, 160)
+    const safeService = escapeHtml(service || 'Contact général', 160)
+    const safeMessage = escapeHtml(message, 2000)
+    const currentYear = new Date().getFullYear()
+
+    if (!safeName || !safePhone) {
+      return Response.json({ error: 'Nom et téléphone requis' }, { status: 400 })
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailUser,
+        pass: gmailAppPassword,
+      },
+    })
+
+    await transporter.sendMail({
+      from: `"SENEDIAG Site" <${gmailUser}>`,
+      to: recipientEmail,
+      replyTo: safeEmail || gmailUser,
+      subject: `SENEDIAG - Nouvelle demande - ${cleanText(service || 'Contact général', 120)} - ${cleanText(name, 120)}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:500px;margin:auto;border:1px solid #DBEAFE;border-radius:12px;overflow:hidden">
+          <div style="background:#167B93;padding:20px;text-align:center">
+            <h2 style="color:white;margin:0;font-size:20px">+ SENEDIAG</h2>
+            <p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:13px">Nouvelle demande reçue</p>
+          </div>
+          <div style="padding:24px">
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:8px 0;color:#6B7280;font-size:13px;width:120px">Nom</td><td style="font-weight:600">${safeName}</td></tr>
+              <tr><td style="padding:8px 0;color:#6B7280;font-size:13px">Téléphone</td><td style="font-weight:600">${safePhone}</td></tr>
+              <tr><td style="padding:8px 0;color:#6B7280;font-size:13px">Courriel</td><td>${safeEmail || '-'}</td></tr>
+              <tr><td style="padding:8px 0;color:#6B7280;font-size:13px">Service</td><td><span style="background:#DFF3F7;color:#167B93;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600">${safeService}</span></td></tr>
+              <tr><td style="padding:8px 0;color:#6B7280;font-size:13px;vertical-align:top">Message</td><td style="font-size:13px;color:#374151;white-space:pre-wrap">${safeMessage || '-'}</td></tr>
+            </table>
+          </div>
+          <div style="background:#EAF7FA;padding:14px 24px;text-align:center">
+            <p style="font-size:11px;color:#9CA3AF;margin:0">${currentYear} SENEDIAG - Sénégal Diagnostique</p>
+          </div>
+        </div>
+      `,
+    })
+
+    return Response.json({ success: true })
+  } catch (error) {
+    console.error('Email error:', error)
+    return Response.json({ error: 'Erreur envoi email' }, { status: 500 })
+  }
+}
