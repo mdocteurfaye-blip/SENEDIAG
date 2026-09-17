@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ANALYSES, KINE_PROGRAMS, SERVICES, WHATSAPP_NUMBER } from '@/lib/constants'
 import AppIcon from './AppIcon'
@@ -33,25 +33,59 @@ const KINE_BENEFITS = [
 
 export default function Services() {
   const audioRef = useRef(null)
+  const abortControllerRef = useRef(null)
   const [playingService, setPlayingService] = useState(null)
 
+  // Nettoyer les ressources audio au démontage du composant
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
   const playServiceAudio = serviceId => {
+    // Arrêter le audio précédent
     if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
 
+    // Annuler les event listeners précédents
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
     const audio = new Audio(`/audios/${serviceId}.mp3`)
+    const abortController = new AbortController()
+    
     audioRef.current = audio
+    abortControllerRef.current = abortController
     setPlayingService(serviceId)
 
-    audio.addEventListener('ended', () => {
+    // Event listener avec cleanup automatique
+    const handleEnded = () => {
       if (audioRef.current === audio) {
         setPlayingService(null)
       }
-    })
+    }
 
-    audio.play().catch(() => {
+    const handleError = () => {
+      if (audioRef.current === audio) {
+        setPlayingService(null)
+      }
+    }
+
+    audio.addEventListener('ended', handleEnded, { signal: abortController.signal })
+    audio.addEventListener('error', handleError, { signal: abortController.signal })
+
+    audio.play().catch(error => {
+      console.warn(`Erreur lecture audio ${serviceId}:`, error)
       if (audioRef.current === audio) {
         setPlayingService(null)
       }
@@ -365,7 +399,7 @@ export function Kinesitherapie() {
                 </div>
                 <span className="text-sm font-bold text-navy">{item.label}</span>
               </div>
-            ))}clone 
+            ))}
           </div>
           <a
             href={waLink}

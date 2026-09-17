@@ -1,6 +1,7 @@
 'use client'
+import { memo } from 'react'
 import { motion } from 'framer-motion'
-import { WHATSAPP_NUMBER, PHONE_NUMBER } from '@/lib/constants'
+import { WHATSAPP_NUMBER, PHONE_NUMBER, WHATSAPP_APPOINTMENT_URL } from '@/lib/constants'
 import AppIcon from './AppIcon'
 
 const FLOATING_ICONS = [
@@ -12,9 +13,9 @@ const FLOATING_ICONS = [
   { icon: 'ambulance', x: '75%', y: '80%', delay: 0.6 },
 ]
 
-const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Bonjour SENEDIAG, je voudrais prendre rendez-vous.')}`
+const waLink = WHATSAPP_APPOINTMENT_URL
 
-export default function Hero() {
+function Hero() {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-sky-soft via-white to-sky-mid pt-16">
       <div className="blob w-96 h-96 bg-primary/30 top-0 left-0" />
@@ -160,3 +161,5 @@ export default function Hero() {
     </section>
   )
 }
+
+export default memo(Hero)

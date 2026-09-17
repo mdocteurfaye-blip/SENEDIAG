@@ -1,7 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { WHATSAPP_NUMBER, PHONE_NUMBER } from '@/lib/constants'
+import { WHATSAPP_NUMBER, PHONE_NUMBER, WHATSAPP_APPOINTMENT_URL } from '@/lib/constants'
+import { throttle } from '@/lib/throttle'
 import { Menu, X } from 'lucide-react'
 import Logo from './Logo'
 import AppIcon from './AppIcon'
@@ -18,14 +19,24 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const throttledScrollRef = useRef(null)
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', fn)
-    return () => window.removeEventListener('scroll', fn)
+    // Créer une version throttlée du handler de scroll (max 10x par seconde = 100ms)
+    throttledScrollRef.current = throttle(() => {
+      setScrolled(window.scrollY > 40)
+    }, 100)
+
+    window.addEventListener('scroll', throttledScrollRef.current)
+    
+    return () => {
+      if (throttledScrollRef.current) {
+        window.removeEventListener('scroll', throttledScrollRef.current)
+      }
+    }
   }, [])
 
-  const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Bonjour SENEDIAG, je voudrais prendre rendez-vous.')}`
+  const waLink = WHATSAPP_APPOINTMENT_URL
 
   return (
     <motion.nav

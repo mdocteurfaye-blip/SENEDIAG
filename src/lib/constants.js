@@ -5,6 +5,16 @@ export const EMAIL_FROM = 'mdocteur.faye@univ-thies.sn'
 export const SITE_NAME = 'SENEDIAG'
 export const SITE_TAGLINE = 'Sénégal Diagnostique'
 
+// URLs WhatsApp centralisées
+export const WHATSAPP_APPOINTMENT_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Bonjour SENEDIAG, je voudrais prendre rendez-vous.')}`
+
+// Validation regex et limites
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const PHONE_REGEX = /^[\d+\s()-]{8,20}$/
+export const MIN_NAME_LENGTH = 2
+export const MAX_NAME_LENGTH = 120
+export const MAX_MESSAGE_LENGTH = 2000
+
 export const SERVICES = [
   {
     id: 'telemedecine',
