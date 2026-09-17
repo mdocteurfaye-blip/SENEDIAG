@@ -1,8 +1,10 @@
 'use client'
 import { useRef, useState, useEffect } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ANALYSES, KINE_PROGRAMS, SERVICES, WHATSAPP_NUMBER } from '@/lib/constants'
 import AppIcon from './AppIcon'
+import radiologueDoctor from '@/assets/images/doctors-meeting-cabinet-discuss-x-ray-scans-results-treatment-plan.jpg'
 
 const LAB_STEPS = [
   { icon: 'send', title: 'Envoi de la prescription', desc: 'Commande en ligne' },
@@ -318,23 +320,31 @@ export function Teleradiologie() {
             initial={{ opacity: 0, scale: 0.85 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="flex justify-center"
+            className="flex justify-center pb-8 lg:pb-0"
           >
-            <div className="relative w-72">
-              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 5, repeat: Infinity }}>
-                <div className="bg-gradient-to-br from-sky-soft to-sky-mid rounded-3xl p-6 shadow-hover">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white text-primary flex items-center justify-center shadow-card">
-                    <AppIcon name="scan" size={42} strokeWidth={1.8} />
-                  </div>
-                  <div className="bg-white rounded-2xl p-4 text-center shadow-card">
-                    <div className="text-xs text-navy/50 mb-1">Resultat</div>
-                    <div className="font-display font-bold text-navy">Rapport radiologique</div>
-                    <div className="text-primary font-bold text-sm mt-1">Interprete et signe</div>
-                    <div className="mt-2 flex items-center justify-center gap-1">
-                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-xs text-green-600 font-semibold">Envoye en 2h</span>
-                    </div>
-                  </div>
+            <div className="relative w-full max-w-sm">
+              <div className="relative rounded-[2rem] overflow-hidden shadow-hover ring-8 ring-white">
+                <Image
+                  src={radiologueDoctor}
+                  alt="Radiologue SENEDIAG analysant une radiographie"
+                  placeholder="blur"
+                  sizes="(max-width: 1024px) 90vw, 380px"
+                  className="w-full h-auto object-cover aspect-[3/4]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy/60 via-transparent to-transparent" />
+              </div>
+
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[85%] bg-white rounded-2xl p-4 text-center shadow-hover"
+              >
+                <div className="text-xs text-navy/50 mb-1">Resultat</div>
+                <div className="font-display font-bold text-navy">Rapport radiologique</div>
+                <div className="text-primary font-bold text-sm mt-1">Interprete et signe</div>
+                <div className="mt-2 flex items-center justify-center gap-1">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-xs text-green-600 font-semibold">Envoye en 2h</span>
                 </div>
               </motion.div>
             </div>

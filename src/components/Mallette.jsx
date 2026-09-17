@@ -1,7 +1,9 @@
 'use client'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { MALLETTE_DEVICES, WHATSAPP_NUMBER, PHONE_NUMBER } from '@/lib/constants'
 import AppIcon from './AppIcon'
+import malletteDoctor from '@/assets/images/hands-medical-doctor.jpg'
 
 const floatingDevices = [
   { icon: 'radio', label: 'Échographe' },
@@ -43,14 +45,19 @@ export default function Mallette() {
               <motion.div
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-0 flex items-center justify-center"
+                className="absolute inset-[3.25rem] rounded-full overflow-hidden shadow-hover ring-4 ring-white"
               >
-                <div className="bg-gradient-to-br from-sky-soft to-sky-mid rounded-3xl p-8 shadow-hover text-center">
-                  <div className="w-16 h-16 mx-auto mb-2 rounded-2xl bg-white text-primary flex items-center justify-center shadow-card">
-                    <AppIcon name="briefcaseMedical" size={34} strokeWidth={1.8} />
-                  </div>
-                  <div className="font-display font-bold text-navy text-sm">Mallette</div>
-                  <div className="text-primary text-xs font-semibold">SENEDIAG</div>
+                <Image
+                  src={malletteDoctor}
+                  alt="Infirmier SENEDIAG avec la mallette médicale connectée"
+                  placeholder="blur"
+                  sizes="240px"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/45 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-3 text-center">
+                  <div className="font-display font-bold text-white text-sm drop-shadow">Mallette</div>
+                  <div className="text-white/90 text-[11px] font-semibold drop-shadow">SENEDIAG</div>
                 </div>
               </motion.div>
             </div>

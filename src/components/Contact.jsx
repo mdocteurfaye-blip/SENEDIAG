@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Mail, PhoneCall } from 'lucide-react'
 import { 
@@ -15,6 +16,7 @@ import {
 } from '@/lib/constants'
 import { createRateLimiter } from '@/lib/rateLimit'
 import WhatsAppIcon from './WhatsAppIcon'
+import contactDoctor from '@/assets/images/specialist-male-doctor-writing-his-notes.jpg'
 
 const SERVICES_LIST = [
   'Consultation à domicile',
@@ -231,6 +233,32 @@ export default function Contact() {
                 </div>
               </motion.a>
             ))}
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="relative hidden lg:block rounded-2xl overflow-hidden shadow-card flex-1 min-h-[220px]"
+            >
+              <Image
+                src={contactDoctor}
+                alt="Médecin SENEDIAG prêt à prendre votre demande en charge"
+                placeholder="blur"
+                sizes="320px"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy/75 via-navy/10 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <div className="font-display font-bold text-white text-lg leading-tight">
+                  Une équipe vous répond
+                </div>
+                <div className="text-white/80 text-xs font-medium mt-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  24h/24 — 7j/7, partout au Sénégal
+                </div>
+              </div>
+            </motion.div>
           </div>
 
           <motion.div

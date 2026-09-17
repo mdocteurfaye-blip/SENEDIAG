@@ -1,16 +1,16 @@
 'use client'
 import { memo } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { WHATSAPP_NUMBER, PHONE_NUMBER, WHATSAPP_APPOINTMENT_URL } from '@/lib/constants'
 import AppIcon from './AppIcon'
+import heroDoctor from '@/assets/images/african-american-woman-with-doctor-job-holding-bottle-medicine.jpg'
 
-const FLOATING_ICONS = [
-  { icon: 'heart', x: '78%', y: '18%', delay: 0 },
-  { icon: 'stethoscope', x: '82%', y: '42%', delay: 0.8 },
-  { icon: 'pill', x: '70%', y: '65%', delay: 1.4 },
-  { icon: 'microscope', x: '88%', y: '72%', delay: 0.4 },
-  { icon: 'briefcaseMedical', x: '65%', y: '30%', delay: 1.0 },
-  { icon: 'ambulance', x: '75%', y: '80%', delay: 0.6 },
+const STATS = [
+  { n: '24/7', l: 'Disponible' },
+  { n: '45+', l: 'Spécialistes' },
+  { n: '<2h', l: 'Résultats radio' },
+  { n: '12', l: 'Appareils mallette' },
 ]
 
 const waLink = WHATSAPP_APPOINTMENT_URL
@@ -26,22 +26,6 @@ function Hero() {
         style={{ backgroundImage: 'linear-gradient(#167B93 1px,transparent 1px),linear-gradient(90deg,#167B93 1px,transparent 1px)', backgroundSize: '48px 48px' }}
       />
 
-      <div className="hidden lg:block">
-        {FLOATING_ICONS.map((f, i) => (
-          <motion.div
-            key={i}
-            className="absolute select-none"
-            style={{ left: f.x, top: f.y }}
-            animate={{ y: [0, -14, 0] }}
-            transition={{ duration: 4 + i * 0.5, repeat: Infinity, delay: f.delay, ease: 'easeInOut' }}
-          >
-            <div className="bg-white/85 backdrop-blur rounded-2xl p-3 shadow-card text-primary">
-              <AppIcon name={f.icon} size={24} />
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
       <div className="absolute bottom-12 left-0 right-0 opacity-10 pointer-events-none">
         <svg viewBox="0 0 1200 80" className="w-full" preserveAspectRatio="none">
           <polyline
@@ -53,12 +37,13 @@ function Hero() {
         </svg>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 lg:py-20 w-full grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
+        {/* ── Colonne texte ───────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="max-w-xl"
+          className="max-w-xl order-2 lg:order-1"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -70,13 +55,13 @@ function Hero() {
             Disponible 24h/24 — 7j/7
           </motion.div>
 
-          <h1 className="font-display font-bold text-5xl lg:text-6xl leading-[1.05] text-navy mb-6">
+          <h1 className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl leading-[1.05] text-navy mb-6">
             La médecine <span className="text-gradient">qui vient</span>
             <br />
             <span className="text-gradient">à vous</span>
           </h1>
 
-          <p className="text-lg text-navy/60 leading-relaxed mb-8 max-w-md">
+          <p className="text-base sm:text-lg text-navy/60 leading-relaxed mb-8 max-w-md">
             Consultation, labo, radio, ambulance — SENEDIAG se déplace partout au Sénégal avec son équipement médical de pointe.
           </p>
 
@@ -104,14 +89,9 @@ function Hero() {
           </div>
 
           <div className="flex gap-6 flex-wrap">
-            {[
-              { n: '24/7', l: 'Disponible' },
-              { n: '45+', l: 'Spécialistes' },
-              { n: '<2h', l: 'Résultats radio' },
-              { n: '12', l: 'Appareils mallette' },
-            ].map((s, i) => (
+            {STATS.map((s, i) => (
               <motion.div
-                key={i}
+                key={s.l}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 + i * 0.1 }}
@@ -124,38 +104,58 @@ function Hero() {
           </div>
         </motion.div>
 
+        {/* ── Colonne visuelle ────────────────────────────── */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4, duration: 0.8 }}
-          className="hidden lg:flex absolute right-8 top-1/2 -translate-y-1/2 items-center justify-center"
-          style={{ width: '38%', aspectRatio: '1' }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="relative order-1 lg:order-2 mx-auto w-full max-w-md lg:max-w-none"
         >
-          <div className="relative w-full h-full">
-            <div className="absolute inset-0 border-2 border-dashed border-sky-strong rounded-full animate-orbit" style={{ animationDuration: '16s' }}>
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white rounded-full p-2 shadow-card text-primary">
-                <AppIcon name="stethoscope" size={20} />
-              </div>
-            </div>
-            <div className="absolute inset-8 border border-dashed border-teal/40 rounded-full animate-orbit" style={{ animationDuration: '10s', animationDirection: 'reverse' }}>
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white rounded-full p-2 shadow-card text-primary">
-                <AppIcon name="microscope" size={18} />
-              </div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="bg-white rounded-3xl shadow-hover p-6 flex flex-col items-center gap-2"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-sky-soft text-primary flex items-center justify-center">
-                  <AppIcon name="briefcaseMedical" size={36} strokeWidth={1.8} />
-                </div>
-                <span className="font-display font-bold text-navy text-sm">Mallette médicale</span>
-                <span className="text-[11px] text-primary font-semibold bg-sky-soft px-3 py-1 rounded-full">12 appareils intégrés</span>
-              </motion.div>
-            </div>
+          {/* Anneau décoratif derrière la photo */}
+          <div className="hidden lg:block absolute -inset-6 border-2 border-dashed border-sky-strong/60 rounded-[3rem] animate-orbit" style={{ animationDuration: '30s' }} />
+
+          <div className="relative rounded-[2.5rem] overflow-hidden shadow-hover ring-8 ring-white/70">
+            <Image
+              src={heroDoctor}
+              alt="Médecin SENEDIAG en consultation dans son cabinet"
+              placeholder="blur"
+              priority
+              sizes="(max-width: 1024px) 90vw, 45vw"
+              className="w-full h-auto object-cover aspect-[4/3] lg:aspect-[4/3.4]"
+            />
+            {/* Dégradé bas pour ancrer les badges */}
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-navy/55 to-transparent" />
           </div>
+
+          {/* Badge mallette */}
+          <motion.div
+            animate={{ y: [0, -9, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -bottom-5 -left-3 sm:left-4 lg:-left-8 bg-white rounded-2xl shadow-hover p-3.5 flex items-center gap-3"
+          >
+            <div className="w-11 h-11 rounded-xl bg-sky-soft text-primary flex items-center justify-center shrink-0">
+              <AppIcon name="briefcaseMedical" size={24} strokeWidth={1.8} />
+            </div>
+            <div>
+              <div className="font-display font-bold text-navy text-sm leading-tight">Mallette médicale</div>
+              <div className="text-[11px] text-primary font-semibold">12 appareils intégrés</div>
+            </div>
+          </motion.div>
+
+          {/* Badge téléradiologie */}
+          <motion.div
+            animate={{ y: [0, -7, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+            className="absolute -top-4 -right-2 sm:right-4 lg:-right-6 bg-white rounded-2xl shadow-hover px-3.5 py-2.5 flex items-center gap-2.5"
+          >
+            <div className="w-9 h-9 rounded-lg bg-sky-soft text-primary flex items-center justify-center shrink-0">
+              <AppIcon name="scan" size={19} strokeWidth={1.8} />
+            </div>
+            <div>
+              <div className="font-display font-bold text-navy text-xs leading-tight">Résultats radio</div>
+              <div className="text-[11px] text-primary font-semibold">en moins de 2h</div>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </section>
