@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import AppIcon from './AppIcon'
 
 /**
  * Error Boundary - Capture les erreurs React et les affiche de manière conviviale
@@ -35,7 +36,9 @@ export class ErrorBoundary extends React.Component {
           <div className="max-w-2xl mx-auto">
             <div className="bg-white border-2 border-red-200 rounded-2xl p-8">
               <div className="text-center">
-                <div className="text-6xl mb-4">⚠️</div>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center">
+                  <AppIcon name="alertTriangle" size={34} strokeWidth={1.8} />
+                </div>
                 <h2 className="font-display font-bold text-2xl text-red-600 mb-2">
                   Oups! Une erreur s'est produite
                 </h2>

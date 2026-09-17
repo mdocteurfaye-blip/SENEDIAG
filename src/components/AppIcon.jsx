@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import {
   Activity,
+  AlertTriangle,
   Ambulance,
   Baby,
   BadgeCheck,
@@ -44,6 +45,7 @@ import {
 
 const ICONS = {
   activity: Activity,
+  alertTriangle: AlertTriangle,
   ambulance: Ambulance,
   baby: Baby,
   badgeCheck: BadgeCheck,

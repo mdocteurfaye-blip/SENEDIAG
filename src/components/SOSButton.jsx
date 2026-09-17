@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WHATSAPP_NUMBER, PHONE_NUMBER } from '@/lib/constants'
+import AppIcon from './AppIcon'
 
 export default function SOSButton() {
   const [open, setOpen] = useState(false)
@@ -22,19 +23,21 @@ export default function SOSButton() {
             >
               <a
                 href={`tel:${PHONE_NUMBER}`}
-                className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition-transform"
+                className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform"
                 title="Appeler"
+                aria-label="Appeler le numéro d'urgence"
               >
-                📞
+                <AppIcon name="phone" size={24} strokeWidth={2.2} />
               </a>
               <a
                 href={sosWa}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition-transform"
+                className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform"
                 title="WhatsApp urgent"
+                aria-label="Envoyer un message WhatsApp urgent"
               >
-                💬
+                <AppIcon name="message" size={24} strokeWidth={2.2} />
               </a>
             </motion.div>
           )}
@@ -47,8 +50,10 @@ export default function SOSButton() {
           className="w-16 h-16 rounded-full bg-red-500 text-white font-display font-bold text-sm shadow-lg hover:bg-red-600 transition-colors flex flex-col items-center justify-center gap-0.5"
           style={{ animation: 'pulse-ring 1.5s infinite' }}
           title="Urgence"
+          aria-label="Ouvrir les contacts d'urgence"
+          aria-expanded={open}
         >
-          <span className="text-lg">🆘</span>
+          <AppIcon name="siren" size={20} strokeWidth={2.2} />
           <span className="text-[10px] font-bold leading-none">SOS</span>
         </motion.button>
       </div>
