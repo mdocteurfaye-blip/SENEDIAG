@@ -80,13 +80,8 @@ export async function POST(request) {
       return Response.json({ error: 'Configuration email indisponible. Vérifiez le mot de passe d’application.' }, { status: 500 })
     }
 
-    const isGmailSender = gmailUser.toLowerCase().endsWith('@gmail.com')
-    if (!smtpHost && !isGmailSender) {
-      console.error('Invalid SMTP config: sender is not a Gmail address and SMTP_HOST is not configured.')
-      return Response.json({
-        error: 'Configuration SMTP invalide. Utilisez un compte Gmail ou configurez SMTP_HOST, SMTP_PORT et SMTP_SECURE.',
-      }, { status: 500 })
-    }
+    // We allow service: 'gmail' for any email address since it might be a Google Workspace account
+
 
     const smtpConfig = smtpHost
       ? {
@@ -97,6 +92,9 @@ export async function POST(request) {
             user: smtpUser,
             pass: smtpPass,
           },
+          tls: {
+            rejectUnauthorized: false
+          }
         }
       : {
           service: 'gmail',
@@ -104,6 +102,9 @@ export async function POST(request) {
             user: gmailUser,
             pass: smtpPass,
           },
+          tls: {
+            rejectUnauthorized: false
+          }
         }
 
     const safeName = escapeHtml(name, 120)
