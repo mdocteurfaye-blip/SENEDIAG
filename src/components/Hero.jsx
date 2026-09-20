@@ -14,8 +14,6 @@ const FLOATING_ICONS = [
 ]
 
 const waLink = WHATSAPP_APPOINTMENT_URL
-const emergencyLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('URGENCE SENEDIAG - Je souhaite une consultation médicale urgente. Mon adresse et mes symptômes : ')}`
-const followUpLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Bonjour SENEDIAG, je souhaite une consultation de suivi. Merci de me recontacter pour prendre rendez-vous.')}`
 
 function Hero() {
   return (
@@ -76,9 +74,6 @@ function Hero() {
             La médecine <span className="text-gradient">qui vient</span>
             <br />
             <span className="text-gradient">à vous</span>
-            <span className="block mt-4 text-2xl lg:text-3xl leading-tight font-semibold text-primary">
-              Un accès aux soins de qualité, sans délai
-            </span>
           </h1>
 
           <p className="text-lg text-navy/60 leading-relaxed mb-8 max-w-md">
@@ -105,22 +100,6 @@ function Hero() {
               className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-sky-soft border border-sky-strong text-navy font-semibold text-base hover:bg-sky-mid transition-all"
             >
               <AppIcon name="hospital" size={18} /> Services
-            </a>
-            <a
-              href={emergencyLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 font-bold text-sm hover:bg-red-100 transition-all"
-            >
-              <AppIcon name="siren" size={18} /> Médecin d'urgence
-            </a>
-            <a
-              href={followUpLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-teal-light border border-teal/30 text-primary font-bold text-sm hover:bg-sky-mid transition-all"
-            >
-              <AppIcon name="refresh" size={18} /> Consultation de suivi
             </a>
           </div>
 

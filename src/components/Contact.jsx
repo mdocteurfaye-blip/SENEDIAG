@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, PhoneCall } from 'lucide-react'
 import { 
@@ -26,17 +26,6 @@ const SERVICES_LIST = [
   'Deuxième avis médical',
   'Partenariat clinique',
 ]
-
-const SERVICE_CONTEXTS = {
-  'Consultation à domicile': 'Quel est le motif de votre consultation et souhaitez-vous une visite à domicile ?',
-  'Mallette connectée': 'Quels examens ou besoins souhaitez-vous réaliser avec la mallette médicale connectée ?',
-  Ambulance: 'Indiquez votre adresse, l’état du patient et le niveau d’urgence de la situation.',
-  Laboratoire: 'Précisez les analyses souhaitées et indiquez si un prélèvement à domicile est nécessaire.',
-  Téléradiologie: 'Précisez l’examen à interpréter et joignez les informations utiles à votre demande.',
-  Kinésithérapie: 'Indiquez le motif de la séance, la zone à traiter et vos disponibilités.',
-  'Deuxième avis médical': 'Décrivez votre situation médicale et le type d’avis que vous souhaitez obtenir.',
-  'Partenariat clinique': 'Présentez votre structure et le service médical pour lequel vous souhaitez un partenariat.',
-}
 
 const TRACKING_STEPS = [
   { icon: '+', label: 'Demande reçue', color: 'text-green-500' },
@@ -121,25 +110,10 @@ const CONTACT_METHODS = [
 
 export default function Contact() {
   const [form, setForm] = useState(EMPTY_FORM)
-  const [serviceContext, setServiceContext] = useState(null)
   const [status, setStatus] = useState('idle')
   const [trackStep, setTrackStep] = useState(-1)
   const [validationErrors, setValidationErrors] = useState({})
   const rateLimiterRef = useRef(createRateLimiter(5, 60000)) // Max 5 soumissions par minute
-
-  useEffect(() => {
-    const requestedService = new URLSearchParams(window.location.search).get('service')
-    const prompt = requestedService ? SERVICE_CONTEXTS[requestedService] : null
-
-    if (requestedService && prompt) {
-      setServiceContext({ label: requestedService, prompt })
-      setForm(current => ({
-        ...current,
-        service: requestedService,
-        message: current.message || prompt,
-      }))
-    }
-  }, [])
 
   const set = k => e => {
     setForm(f => ({ ...f, [k]: e.target.value }))
@@ -229,11 +203,7 @@ export default function Contact() {
             NOUS CONTACTER
           </div>
           <h2 className="font-display font-bold text-4xl text-navy mb-3">
-            {serviceContext ? (
-              <>Votre demande de <span className="text-gradient">{serviceContext.label}</span></>
-            ) : (
-              <>Parlez-nous de <span className="text-gradient">votre besoin</span></>
-            )}
+            Parlez-nous de <span className="text-gradient">votre besoin</span>
           </h2>
         </motion.div>
 
@@ -295,11 +265,7 @@ export default function Contact() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    setStatus('idle')
-                    setForm({ ...EMPTY_FORM, service: serviceContext?.label || '', message: '' })
-                    setTrackStep(-1)
-                  }}
+                  onClick={() => { setStatus('idle'); setForm(EMPTY_FORM); setTrackStep(-1) }}
                   className="mt-8 px-6 py-3 rounded-xl bg-sky-soft text-primary font-bold text-sm hover:bg-sky-mid transition-colors"
                 >
                   Nouvelle demande
@@ -307,9 +273,7 @@ export default function Contact() {
               </motion.div>
             ) : (
               <div>
-                <h3 className="font-display font-bold text-xl text-navy mb-6" id="form-title">
-                  {serviceContext ? `Formulaire - ${serviceContext.label}` : 'Formulaire de demande'}
-                </h3>
+                <h3 className="font-display font-bold text-xl text-navy mb-6" id="form-title">Formulaire de demande</h3>
                 <form aria-labelledby="form-title">
 
                 <div className="mb-5">
@@ -401,7 +365,7 @@ export default function Contact() {
                     id="contact-message"
                     value={form.message}
                     onChange={set('message')}
-                    placeholder={serviceContext?.prompt || 'Décrivez votre besoin (optionnel)'}
+                    placeholder="Décrivez votre besoin (optionnel)"
                     rows={3}
                     aria-invalid={!!validationErrors.message}
                     aria-describedby={validationErrors.message ? "error-message" : "message-count"}
