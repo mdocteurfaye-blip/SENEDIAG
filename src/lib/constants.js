@@ -5,6 +5,16 @@ export const EMAIL_FROM = 'mdocteur.faye@univ-thies.sn'
 export const SITE_NAME = 'SENEDIAG'
 export const SITE_TAGLINE = 'Sénégal Diagnostique'
 
+// URLs WhatsApp centralisées
+export const WHATSAPP_APPOINTMENT_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Bonjour SENEDIAG, je voudrais prendre rendez-vous.')}`
+
+// Validation regex et limites
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const PHONE_REGEX = /^[\d+\s()-]{8,20}$/
+export const MIN_NAME_LENGTH = 2
+export const MAX_NAME_LENGTH = 120
+export const MAX_MESSAGE_LENGTH = 2000
+
 export const SERVICES = [
   {
     id: 'telemedecine',
@@ -64,6 +74,21 @@ export const SERVICES = [
       { icon: 'userCheck', label: 'Radiologue' },
       { icon: 'clock', label: 'Moins de 2h' },
       { icon: 'file', label: 'Rapport' },
+    ],
+  },
+  {
+    id: 'imagerie-medicale',
+    icon: 'scan',
+    color: 'from-blue-500 to-primary',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    label: 'Imagerie médicale sur place',
+    desc: 'Examens de dernière génération à prix accessible',
+    steps: [
+      { icon: 'scan', label: 'IRM & scanner' },
+      { icon: 'camera', label: 'Radiographie' },
+      { icon: 'activity', label: 'EEG & échographie' },
+      { icon: 'userCheck', label: 'Interprétation' },
     ],
   },
   {

@@ -1,4 +1,6 @@
-export default function Logo({ className = 'w-9 h-9', markClassName = '' }) {
+import { memo } from 'react'
+
+function Logo({ className = 'w-9 h-9', markClassName = '' }) {
   return (
     <div className={`${className} ${markClassName} rounded-xl bg-gradient-to-br from-brand-dark via-primary to-teal shadow-md flex items-center justify-center overflow-hidden`}>
       <svg
@@ -33,3 +35,5 @@ export default function Logo({ className = 'w-9 h-9', markClassName = '' }) {
     </div>
   )
 }
+
+export default memo(Logo)

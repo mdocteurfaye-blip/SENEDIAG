@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ANALYSES, KINE_PROGRAMS, SERVICES, WHATSAPP_NUMBER } from '@/lib/constants'
 import AppIcon from './AppIcon'
@@ -33,25 +33,59 @@ const KINE_BENEFITS = [
 
 export default function Services() {
   const audioRef = useRef(null)
+  const abortControllerRef = useRef(null)
   const [playingService, setPlayingService] = useState(null)
 
+  // Nettoyer les ressources audio au démontage du composant
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
+
   const playServiceAudio = serviceId => {
+    // Arrêter le audio précédent
     if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
 
+    // Annuler les event listeners précédents
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
     const audio = new Audio(`/audios/${serviceId}.mp3`)
+    const abortController = new AbortController()
+    
     audioRef.current = audio
+    abortControllerRef.current = abortController
     setPlayingService(serviceId)
 
-    audio.addEventListener('ended', () => {
+    // Event listener avec cleanup automatique
+    const handleEnded = () => {
       if (audioRef.current === audio) {
         setPlayingService(null)
       }
-    })
+    }
 
-    audio.play().catch(() => {
+    const handleError = () => {
+      if (audioRef.current === audio) {
+        setPlayingService(null)
+      }
+    }
+
+    audio.addEventListener('ended', handleEnded, { signal: abortController.signal })
+    audio.addEventListener('error', handleError, { signal: abortController.signal })
+
+    audio.play().catch(error => {
+      console.warn(`Erreur lecture audio ${serviceId}:`, error)
       if (audioRef.current === audio) {
         setPlayingService(null)
       }
@@ -82,14 +116,14 @@ export default function Services() {
           {SERVICES.map((service, i) => (
             <motion.a
               key={service.id}
-              href={service.id === 'telemedecine' ? '#contact' : `#${service.id}`}
+              href={service.id === 'telemedecine' ? '#contact' : service.id === 'imagerie-medicale' ? '#teleradiologie' : `#${service.id}`}
               onClick={() => playServiceAudio(service.id)}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
               className={`card-3d group rounded-2xl border ${service.border} ${service.bg} p-5 shadow-card hover:shadow-hover transition-all`}
-              aria-label={`Voir le service ${service.label}`}
+              aria-label={`Appuyez pour voir plus d'informations sur ${service.label}`}
             >
               <div className="flex items-start gap-4 mb-5">
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${service.color} text-white flex items-center justify-center shadow-sm flex-shrink-0`}>
@@ -113,7 +147,7 @@ export default function Services() {
               </div>
 
               <div className="mt-5 flex items-center justify-between text-sm font-bold text-primary">
-                <span>Voir le service</span>
+                <span>Appuyez pour voir plus d'informations</span>
                 <span className="flex items-center gap-2">
                   {playingService === service.id && (
                     <span className="flex items-end gap-0.5 h-4" aria-hidden="true">
@@ -198,6 +232,12 @@ export function Laboratoire() {
               >
                 <AppIcon name="message" size={17} /> Demander un partenariat
               </a>
+              <a
+                href="?service=Laboratoire#contact"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-sky-strong text-primary font-bold text-sm hover:bg-sky-soft transition-all ml-2"
+              >
+                <AppIcon name="mail" size={17} /> Envoyer un mail
+              </a>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {LAB_STEPS.map(step => (
@@ -233,8 +273,26 @@ export function Teleradiologie() {
               <span className="text-gradient">en moins de 2h</span>
             </h2>
             <p className="text-navy/60 mb-8 text-base leading-relaxed">
-              Envoyez vos images medicales. Nos radiologues certifies les interpretent et vous renvoient un rapport signe.
+              Nous interprétons vos radiographies, scanners, IRM et autres examens d'imagerie médicale. Nos médecins spécialisés en imagerie médicale, hautement qualifiés et issus des meilleurs réseaux internationaux, vous transmettent un rapport fiable, signé et rapide.
             </p>
+
+            <div className="grid sm:grid-cols-3 gap-3 mb-8">
+              <div className="rounded-2xl border border-purple-100 bg-purple-50 p-4">
+                <AppIcon name="scan" size={21} className="text-purple-600 mb-2" />
+                <div className="font-bold text-navy text-sm mb-1">Tous vos examens</div>
+                <div className="text-xs text-navy/55 leading-relaxed">Radio, scanner, IRM et autres examens d'imagerie.</div>
+              </div>
+              <div className="rounded-2xl border border-purple-100 bg-purple-50 p-4">
+                <AppIcon name="hospital" size={21} className="text-purple-600 mb-2" />
+                <div className="font-bold text-navy text-sm mb-1">Pour toutes les structures</div>
+                <div className="text-xs text-navy/55 leading-relaxed">Hôpitaux, cliniques, cabinets et petites structures de santé.</div>
+              </div>
+              <div className="rounded-2xl border border-purple-100 bg-purple-50 p-4">
+                <AppIcon name="home" size={21} className="text-purple-600 mb-2" />
+                <div className="font-bold text-navy text-sm mb-1">À Keur Massar</div>
+                <div className="text-xs text-navy/55 leading-relaxed">Nous réalisons également vos examens dans notre local.</div>
+              </div>
+            </div>
 
             <div className="flex flex-col gap-3 mb-8">
               {TELERADIO_STEPS.map((flow, i) => (
@@ -277,6 +335,12 @@ export function Teleradiologie() {
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-500 to-primary text-white font-bold shadow-hover hover:-translate-y-0.5 transition-all"
             >
               <AppIcon name="message" size={18} /> Demander un devis
+            </a>
+            <a
+              href="?service=Téléradiologie#contact"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl border-2 border-purple-200 text-purple-600 font-bold hover:bg-purple-50 transition-all ml-2"
+            >
+              <AppIcon name="mail" size={18} /> Envoyer un mail
             </a>
           </motion.div>
 
@@ -365,7 +429,7 @@ export function Kinesitherapie() {
                 </div>
                 <span className="text-sm font-bold text-navy">{item.label}</span>
               </div>
-            ))}clone 
+            ))}
           </div>
           <a
             href={waLink}
@@ -374,6 +438,12 @@ export function Kinesitherapie() {
             className="w-full lg:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-400 to-primary text-white font-bold text-base shadow-hover hover:-translate-y-1 transition-all whitespace-nowrap"
           >
             <AppIcon name="message" size={19} /> Reserver une seance
+          </a>
+          <a
+            href="?service=Kinésithérapie#contact"
+            className="w-full lg:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl border-2 border-orange-200 text-orange-600 font-bold text-base hover:bg-orange-50 transition-all whitespace-nowrap"
+          >
+            <AppIcon name="mail" size={19} /> Envoyer un mail
           </a>
         </div>
       </div>

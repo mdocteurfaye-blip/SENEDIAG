@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import {
   Activity,
   Ambulance,
@@ -84,7 +85,9 @@ const ICONS = {
   zap: Zap,
 }
 
-export default function AppIcon({ name, size = 20, className = '', strokeWidth = 2 }) {
+function AppIcon({ name, size = 20, className = '', strokeWidth = 2 }) {
   const Icon = ICONS[name] || Activity
   return <Icon size={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" />
 }
+
+export default memo(AppIcon)

@@ -1,8 +1,19 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, PhoneCall } from 'lucide-react'
-import { WHATSAPP_NUMBER, PHONE_NUMBER, EMAIL_TO } from '@/lib/constants'
+import { 
+  WHATSAPP_NUMBER, 
+  PHONE_NUMBER, 
+  EMAIL_TO, 
+  WHATSAPP_APPOINTMENT_URL,
+  EMAIL_REGEX, 
+  PHONE_REGEX, 
+  MIN_NAME_LENGTH, 
+  MAX_NAME_LENGTH, 
+  MAX_MESSAGE_LENGTH 
+} from '@/lib/constants'
+import { createRateLimiter } from '@/lib/rateLimit'
 import WhatsAppIcon from './WhatsAppIcon'
 
 const SERVICES_LIST = [
@@ -16,6 +27,17 @@ const SERVICES_LIST = [
   'Partenariat clinique',
 ]
 
+const SERVICE_CONTEXTS = {
+  'Consultation à domicile': 'Quel est le motif de votre consultation et souhaitez-vous une visite à domicile ?',
+  'Mallette connectée': 'Quels examens ou besoins souhaitez-vous réaliser avec la mallette médicale connectée ?',
+  Ambulance: 'Indiquez votre adresse, l’état du patient et le niveau d’urgence de la situation.',
+  Laboratoire: 'Précisez les analyses souhaitées et indiquez si un prélèvement à domicile est nécessaire.',
+  Téléradiologie: 'Précisez l’examen à interpréter et joignez les informations utiles à votre demande.',
+  Kinésithérapie: 'Indiquez le motif de la séance, la zone à traiter et vos disponibilités.',
+  'Deuxième avis médical': 'Décrivez votre situation médicale et le type d’avis que vous souhaitez obtenir.',
+  'Partenariat clinique': 'Présentez votre structure et le service médical pour lequel vous souhaitez un partenariat.',
+}
+
 const TRACKING_STEPS = [
   { icon: '+', label: 'Demande reçue', color: 'text-green-500' },
   { icon: '1', label: "L'équipe examine", color: 'text-blue-500' },
@@ -26,13 +48,57 @@ const TRACKING_STEPS = [
 
 const EMPTY_FORM = { name: '', phone: '', email: '', service: '', message: '', website: '' }
 
+function buildWhatsAppMessage({ name, phone, email, service, message }) {
+  return [
+    'Bonjour SENEDIAG, je voudrais faire une demande.',
+    '',
+    `Nom : ${name.trim()}`,
+    `Telephone / WhatsApp : ${phone.trim()}`,
+    email?.trim() ? `Courriel : ${email.trim()}` : '',
+    service?.trim() ? `Service souhaite : ${service.trim()}` : '',
+    message?.trim() ? `Besoin : ${message.trim()}` : '',
+  ].filter(Boolean).join('\n')
+}
+
+// Validation du formulaire
+function validateForm(form) {
+  const errors = {}
+  const name = form.name?.trim() || ''
+  const phone = form.phone?.trim() || ''
+  const email = form.email?.trim() || ''
+
+  if (!name) {
+    errors.name = 'Nom requis'
+  } else if (name.length < MIN_NAME_LENGTH) {
+    errors.name = `Minimum ${MIN_NAME_LENGTH} caractères`
+  } else if (name.length > MAX_NAME_LENGTH) {
+    errors.name = `Maximum ${MAX_NAME_LENGTH} caractères`
+  }
+
+  if (!phone) {
+    errors.phone = 'Téléphone requis'
+  } else if (!PHONE_REGEX.test(phone)) {
+    errors.phone = 'Téléphone invalide (format: +221777268292 ou 777268292)'
+  }
+
+  if (email && !EMAIL_REGEX.test(email)) {
+    errors.email = 'Email invalide'
+  }
+
+  if (form.message && form.message.length > MAX_MESSAGE_LENGTH) {
+    errors.message = `Message trop long (max ${MAX_MESSAGE_LENGTH} caractères)`
+  }
+
+  return { isValid: Object.keys(errors).length === 0, errors }
+}
+
 const CONTACT_METHODS = [
   {
     Icon: WhatsAppIcon,
     label: 'WhatsApp',
     sub: 'Reponse immediate',
     color: 'bg-green-500',
-    href: `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Bonjour SENEDIAG, je voudrais prendre rendez-vous.')}`,
+    href: WHATSAPP_APPOINTMENT_URL,
     external: true,
   },
   {
@@ -55,37 +121,98 @@ const CONTACT_METHODS = [
 
 export default function Contact() {
   const [form, setForm] = useState(EMPTY_FORM)
+  const [serviceContext, setServiceContext] = useState(null)
   const [status, setStatus] = useState('idle')
   const [trackStep, setTrackStep] = useState(-1)
+  const [validationErrors, setValidationErrors] = useState({})
+  const rateLimiterRef = useRef(createRateLimiter(5, 60000)) // Max 5 soumissions par minute
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
+  useEffect(() => {
+    const requestedService = new URLSearchParams(window.location.search).get('service')
+    const prompt = requestedService ? SERVICE_CONTEXTS[requestedService] : null
+
+    if (requestedService && prompt) {
+      setServiceContext({ label: requestedService, prompt })
+      setForm(current => ({
+        ...current,
+        service: requestedService,
+        message: current.message || prompt,
+      }))
+    }
+  }, [])
+
+  const set = k => e => {
+    setForm(f => ({ ...f, [k]: e.target.value }))
+    // Nettoyer l'erreur du champ en cours de modification
+    if (validationErrors[k]) {
+      setValidationErrors(v => ({ ...v, [k]: '' }))
+    }
+  }
 
   const submit = async () => {
-    if (!form.name || !form.phone) return
+    setValidationErrors({})
+    
+    // Vérifier le rate limit côté client
+    const rateLimitCheck = rateLimiterRef.current.isAllowed()
+    if (!rateLimitCheck.allowed) {
+      const remainingSeconds = Math.ceil((rateLimitCheck.resetAt - Date.now()) / 1000)
+      setValidationErrors({
+        submit: `Trop de tentatives. Réessayez dans ${remainingSeconds} secondes.`,
+      })
+      setStatus('error')
+      return
+    }
+
+    const validation = validateForm(form)
+    
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors)
+      setStatus('error')
+      return
+    }
+
     setStatus('loading')
 
     try {
+      // Appeler l'API backend
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Contact request failed')
+        throw new Error(data.error || 'Erreur lors de l\'envoi')
       }
 
+      // Succès: afficher le suivi et ouvrir WhatsApp
       setStatus('success')
       setTrackStep(0)
+      
+      const message = encodeURIComponent(buildWhatsAppMessage(form))
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
+      
+      // Délai pour afficher le suivi avant d'ouvrir WhatsApp
+      setTimeout(() => {
+        const opened = window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+        if (!opened) {
+          window.location.href = whatsappUrl
+        }
+      }, 800)
 
+      // Animation du suivi
       let s = 0
       const iv = setInterval(() => {
         s++
         setTrackStep(s)
         if (s >= TRACKING_STEPS.length - 1) clearInterval(iv)
       }, 1200)
-    } catch {
+    } catch (err) {
+      console.error('Contact form error:', err)
       setStatus('error')
+      setValidationErrors({ submit: err.message || 'Erreur d\'envoi. Contactez-nous directement sur WhatsApp.' })
     }
   }
 
@@ -102,7 +229,11 @@ export default function Contact() {
             NOUS CONTACTER
           </div>
           <h2 className="font-display font-bold text-4xl text-navy mb-3">
-            Parlez-nous de <span className="text-gradient">votre besoin</span>
+            {serviceContext ? (
+              <>Votre demande de <span className="text-gradient">{serviceContext.label}</span></>
+            ) : (
+              <>Parlez-nous de <span className="text-gradient">votre besoin</span></>
+            )}
           </h2>
         </motion.div>
 
@@ -141,8 +272,8 @@ export default function Contact() {
             {status === 'success' ? (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-4">
                 <div className="text-5xl mb-4 text-green-500">+</div>
-                <h3 className="font-display font-bold text-2xl text-navy mb-2">Demande envoyée !</h3>
-                <p className="text-navy/50 text-sm mb-8">Suivez l'avancement de votre demande ci-dessous</p>
+                <h3 className="font-display font-bold text-2xl text-navy mb-2">Message WhatsApp prêt !</h3>
+                <p className="text-navy/50 text-sm mb-8">Validez l'envoi dans WhatsApp pour finaliser votre demande</p>
 
                 <div className="flex flex-col gap-3 max-w-sm mx-auto">
                   {TRACKING_STEPS.map((t, i) => (
@@ -164,7 +295,11 @@ export default function Contact() {
                 </div>
 
                 <button
-                  onClick={() => { setStatus('idle'); setForm(EMPTY_FORM); setTrackStep(-1) }}
+                  onClick={() => {
+                    setStatus('idle')
+                    setForm({ ...EMPTY_FORM, service: serviceContext?.label || '', message: '' })
+                    setTrackStep(-1)
+                  }}
                   className="mt-8 px-6 py-3 rounded-xl bg-sky-soft text-primary font-bold text-sm hover:bg-sky-mid transition-colors"
                 >
                   Nouvelle demande
@@ -172,16 +307,21 @@ export default function Contact() {
               </motion.div>
             ) : (
               <div>
-                <h3 className="font-display font-bold text-xl text-navy mb-6">Formulaire de demande</h3>
+                <h3 className="font-display font-bold text-xl text-navy mb-6" id="form-title">
+                  {serviceContext ? `Formulaire - ${serviceContext.label}` : 'Formulaire de demande'}
+                </h3>
+                <form aria-labelledby="form-title">
 
                 <div className="mb-5">
-                  <div className="text-xs font-bold text-navy/50 uppercase mb-2">Service souhaité</div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <label htmlFor="service-select" className="text-xs font-bold text-navy/50 uppercase mb-2 block">Service souhaité</label>
+                  <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="service-select">
                     {SERVICES_LIST.map((s, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => setForm(f => ({ ...f, service: s }))}
+                        aria-pressed={form.service === s}
+                        aria-label={`Sélectionner service: ${s}`}
                         className={`p-2.5 rounded-xl text-xs font-semibold text-left transition-all ${
                           form.service === s
                             ? 'bg-primary text-white shadow-card'
@@ -195,46 +335,89 @@ export default function Contact() {
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-3 mb-3">
-                  <label className="sr-only" htmlFor="contact-name">Votre nom</label>
-                  <input
-                    id="contact-name"
-                    value={form.name}
-                    onChange={set('name')}
-                    placeholder="Votre nom *"
-                    autoComplete="name"
-                    className="bg-sky-soft border border-blue-100 rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors"
-                  />
+                  <div>
+                    <label className="sr-only" htmlFor="contact-name">Votre nom</label>
+                    <input
+                      id="contact-name"
+                      value={form.name}
+                      onChange={set('name')}
+                      placeholder="Votre nom *"
+                      autoComplete="name"
+                      aria-required="true"
+                      aria-invalid={!!validationErrors.name}
+                      aria-describedby={validationErrors.name ? "error-name" : undefined}
+                      className={`w-full bg-sky-soft border rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors ${
+                        validationErrors.name ? 'border-red-400' : 'border-blue-100'
+                      }`}
+                    />
+                    {validationErrors.name && (
+                      <p id="error-name" className="text-red-500 text-xs mt-1" role="alert">{validationErrors.name}</p>
+                    )}
+                  </div>
 
-                  <label className="sr-only" htmlFor="contact-phone">Téléphone ou WhatsApp</label>
-                  <input
-                    id="contact-phone"
-                    value={form.phone}
-                    onChange={set('phone')}
-                    placeholder="Téléphone / WhatsApp *"
-                    autoComplete="tel"
-                    className="bg-sky-soft border border-blue-100 rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors"
-                  />
+                  <div>
+                    <label className="sr-only" htmlFor="contact-phone">Téléphone ou WhatsApp</label>
+                    <input
+                      id="contact-phone"
+                      value={form.phone}
+                      onChange={set('phone')}
+                      placeholder="Téléphone / WhatsApp *"
+                      autoComplete="tel"
+                      aria-required="true"
+                      aria-invalid={!!validationErrors.phone}
+                      aria-describedby={validationErrors.phone ? "error-phone" : undefined}
+                      className={`w-full bg-sky-soft border rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors ${
+                        validationErrors.phone ? 'border-red-400' : 'border-blue-100'
+                      }`}
+                    />
+                    {validationErrors.phone && (
+                      <p id="error-phone" className="text-red-500 text-xs mt-1" role="alert">{validationErrors.phone}</p>
+                    )}
+                  </div>
                 </div>
 
-                <label className="sr-only" htmlFor="contact-email">Courriel</label>
-                <input
-                  id="contact-email"
-                  value={form.email}
-                  onChange={set('email')}
-                  placeholder="Courriel (optionnel)"
-                  autoComplete="email"
-                  className="w-full bg-sky-soft border border-blue-100 rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors mb-3"
-                />
+                <div>
+                  <label className="sr-only" htmlFor="contact-email">Courriel</label>
+                  <input
+                    id="contact-email"
+                    value={form.email}
+                    onChange={set('email')}
+                    placeholder="Courriel (optionnel)"
+                    autoComplete="email"
+                    aria-invalid={!!validationErrors.email}
+                    aria-describedby={validationErrors.email ? "error-email" : undefined}
+                    className={`w-full bg-sky-soft border rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors ${
+                      validationErrors.email ? 'border-red-400' : 'border-blue-100'
+                    }`}
+                  />
+                  {validationErrors.email && (
+                    <p id="error-email" className="text-red-500 text-xs mt-1" role="alert">{validationErrors.email}</p>
+                  )}
+                </div>
 
-                <label className="sr-only" htmlFor="contact-message">Votre besoin</label>
-                <textarea
-                  id="contact-message"
-                  value={form.message}
-                  onChange={set('message')}
-                  placeholder="Décrivez votre besoin (optionnel)"
-                  rows={3}
-                  className="w-full bg-sky-soft border border-blue-100 rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors resize-none mb-4"
-                />
+                <div className="mb-3">
+                  <label className="sr-only" htmlFor="contact-message">Votre besoin</label>
+                  <textarea
+                    id="contact-message"
+                    value={form.message}
+                    onChange={set('message')}
+                    placeholder={serviceContext?.prompt || 'Décrivez votre besoin (optionnel)'}
+                    rows={3}
+                    aria-invalid={!!validationErrors.message}
+                    aria-describedby={validationErrors.message ? "error-message" : "message-count"}
+                    className={`w-full bg-sky-soft border rounded-xl px-4 py-3 text-sm text-navy placeholder-navy/40 outline-none focus:border-primary transition-colors resize-none ${
+                      validationErrors.message ? 'border-red-400' : 'border-blue-100'
+                    }`}
+                  />
+                  <div className="flex justify-between items-start mt-1">
+                    <div>
+                      {validationErrors.message && (
+                        <p id="error-message" className="text-red-500 text-xs" role="alert">{validationErrors.message}</p>
+                      )}
+                    </div>
+                    <span id="message-count" className="text-navy/40 text-xs" aria-live="polite">{form.message.length}/{MAX_MESSAGE_LENGTH}</span>
+                  </div>
+                </div>
 
                 <label className="hidden" htmlFor="contact-website">Site web</label>
                 <input
@@ -244,10 +427,17 @@ export default function Contact() {
                   tabIndex={-1}
                   autoComplete="off"
                   className="hidden"
+                  aria-hidden="true"
                 />
 
-                {status === 'error' && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm mb-4">
+                {validationErrors.submit && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm mb-4" role="alert" aria-live="assertive">
+                    {validationErrors.submit}
+                  </div>
+                )}
+
+                {status === 'error' && !validationErrors.submit && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm mb-4" role="alert" aria-live="assertive">
                     Erreur d'envoi. Contactez-nous directement sur WhatsApp.
                   </div>
                 )}
@@ -256,11 +446,13 @@ export default function Contact() {
                   type="button"
                   onClick={submit}
                   disabled={!form.name || !form.phone || status === 'loading'}
+                  aria-busy={status === 'loading'}
                   className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-teal text-white font-bold text-base shadow-hover hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                   {status === 'loading' ? 'Envoi en cours...' : 'Envoyer ma demande'}
                 </button>
                 <p className="text-center text-xs text-navy/40 mt-3">* Nous vous répondons sous 30 minutes</p>
+                </form>
               </div>
             )}
           </motion.div>

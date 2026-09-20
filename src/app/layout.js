@@ -1,5 +1,6 @@
 
 import './globals.css'
+import { LayoutClient } from './layout-client'
 
 export const metadata = {
   title: 'SENEDIAG — Sénégal Diagnostique',
@@ -14,7 +15,11 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/favicon.ico" />
         <meta name="theme-color" content="#167B93" />
       </head>
-      <body>{children}</body>
+      <body>
+        <LayoutClient>
+          {children}
+        </LayoutClient>
+      </body>
     </html>
   )
 }

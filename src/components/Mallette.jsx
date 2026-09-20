@@ -131,6 +131,12 @@ export default function Mallette() {
               >
                 <AppIcon name="phone" size={18} />
               </a>
+              <a
+                href="?service=Mallette%20connect%C3%A9e#contact"
+                className="py-3.5 px-5 rounded-2xl border-2 border-sky-strong text-primary font-bold hover:bg-sky-soft transition-all flex items-center gap-2"
+              >
+                <AppIcon name="mail" size={17} /> Envoyer un mail
+              </a>
             </div>
           </motion.div>
         </div>
