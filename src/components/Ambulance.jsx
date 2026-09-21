@@ -71,6 +71,12 @@ export default function Ambulance() {
               >
                 <AppIcon name="message" size={20} /> WhatsApp urgent
               </a>
+              <a
+                href="?service=Ambulance#contact"
+                className="col-span-2 py-3 rounded-2xl border-2 border-red-200 text-red-600 font-bold text-center hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+              >
+                <AppIcon name="mail" size={19} /> Envoyer un mail
+              </a>
             </div>
           </motion.div>
 

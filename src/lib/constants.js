@@ -77,6 +77,21 @@ export const SERVICES = [
     ],
   },
   {
+    id: 'imagerie-medicale',
+    icon: 'scan',
+    color: 'from-blue-500 to-primary',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    label: 'Imagerie médicale sur place',
+    desc: 'Examens de dernière génération à prix accessible',
+    steps: [
+      { icon: 'scan', label: 'IRM & scanner' },
+      { icon: 'camera', label: 'Radiographie' },
+      { icon: 'activity', label: 'EEG & échographie' },
+      { icon: 'userCheck', label: 'Interprétation' },
+    ],
+  },
+  {
     id: 'mallette',
     icon: 'briefcaseMedical',
     color: 'from-primary to-teal',

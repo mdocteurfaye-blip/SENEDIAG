@@ -14,10 +14,18 @@ const ZONES = [
   { id: 'skin',    label: 'Peau',       icon: '🩹',  x: '20%',  y: '54%', service: 'Dermatologie',             wa: 'J\'ai un problème de peau.' },
 ]
 
+const GENERAL_CONSULTATION = {
+  id: 'general',
+  label: 'Consultation générale',
+  icon: '🩺',
+  service: 'Médecine générale',
+  wa: 'Je souhaite une consultation générale.',
+}
+
 export default function BodyChecker() {
   const [selected, setSelected] = useState(null)
 
-  const zone = ZONES.find(z => z.id === selected)
+  const zone = ZONES.find(z => z.id === selected) || (selected === GENERAL_CONSULTATION.id ? GENERAL_CONSULTATION : null)
   const waLink = zone
     ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Bonjour SENEDIAG 👋 ${zone.wa} Je voudrais une consultation en ${zone.service}.`)}`
     : '#'
@@ -116,6 +124,13 @@ export default function BodyChecker() {
                         <div className="text-[10px] font-bold text-navy">{z.label}</div>
                       </button>
                     ))}
+                    <button
+                      onClick={() => setSelected(GENERAL_CONSULTATION.id)}
+                      className="col-span-4 bg-white rounded-xl p-3 text-center hover:bg-sky-mid transition-colors shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <span className="text-xl">{GENERAL_CONSULTATION.icon}</span>
+                      <span className="text-xs font-bold text-navy">{GENERAL_CONSULTATION.label}</span>
+                    </button>
                   </div>
                 </motion.div>
               ) : (
